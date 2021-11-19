@@ -76,6 +76,13 @@ export class Empleado extends Entity {
   })
   numeroDocumento: string;
 
+  @property({
+    type: 'string',
+    required: true,
+  })
+  clave: String;
+  
+  
 
   @belongsTo(() => Empresa)
   empresaId: string;
