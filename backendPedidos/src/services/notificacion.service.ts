@@ -35,9 +35,9 @@ export class NotificacionService {
       .then((message:any) => console.log(message.sid));
 
   }
-  EnviarMensajePorCorreo():string
-   {
-     return 'grupo 10 correo electronico ';
+  EnviarMensajePass():void
+  {
+    
    }
 
 }
