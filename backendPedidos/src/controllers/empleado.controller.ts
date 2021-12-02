@@ -17,28 +17,59 @@ import {
   del,
   requestBody,
   response,
+  HttpErrors,
 } from '@loopback/rest';
-import fetch from 'node-fetch';
-import {Empleado} from '../models';
-import {EmpleadoRepository} from '../repositories';
+//import fetch from 'node-fetch';
+import { Credenciales, Empleado, Mensaje } from '../models';
+import { EmpleadoRepository, MensajeRepository } from '../repositories';
 import { NotificacionService } from '../services';
-import {AutenticacionService } from '../services';
+import { AutenticacionService } from '../services';
 
 
 export class EmpleadoController {
   constructor(
+    @repository(MensajeRepository)
+    public mensajeRepository: MensajeRepository  ,
     @repository(EmpleadoRepository)
-    public empleadoRepository : EmpleadoRepository,
+    public empleadoRepository: EmpleadoRepository,
     @service(NotificacionService)
-    public notificaciones  : NotificacionService,
+    public notificaciones: NotificacionService,
     @service(AutenticacionService)
-    public autenticacion : AutenticacionService
-  ) {}
+    public autenticacion: AutenticacionService
+  ) { }
+  @post('/identificarEmpleado',{
+    responses:{
+      '200':{
+        description: "identificacion usuarios"
+      }
+    }
+  })
+  async identificarEmpleado(@requestBody()credenciales: Credenciales){
+    let e = await this.autenticacion.identificarPersona(credenciales.usuario,credenciales.clave);
+    if(e){
+      let token=this.autenticacion.generarToken(e);
+      return {
+        datos:{
+          nombre:e.nombre,
+          correo:e.Email,
+          id:e.id,
+
+        },
+        token:token,
+      }
+    }else {
+      throw new HttpErrors[401]("Datos invalidos");
+    }
+
+  }
+
+
+
 
   @post('/empleados')
   @response(200, {
     description: 'Empleado model instance',
-    content: {'application/json': {schema: getModelSchemaRef(Empleado)}},
+    content: { 'application/json': { schema: getModelSchemaRef(Empleado) } },
   })
   async create(
     @requestBody({
@@ -53,26 +84,32 @@ export class EmpleadoController {
     })
     empleado: Omit<Empleado, 'id'>,
   ): Promise<Empleado> {
-   
+
     let clave = this.autenticacion.GenerarClave()
     let claveCifrada = this.autenticacion.CifrarClave(clave);
     empleado.clave = claveCifrada
-  
-    let p =  await this.empleadoRepository.create(empleado);
+
+    let p = await this.empleadoRepository.create(empleado);
 
     //Con este notificamos al usuario: 
+    let texto = `Hola ${empleado.nombre}, su nombre de usuario es: ${empleado.Email}, y su contraseña es: ${clave}`;
+    this.autenticacion.EnviarMensajePass(empleado.telefono,texto);
+    let texto2='se agrego empleado'
+    this.notificaciones.EnviarNotificacionesPorSMS(empleado.telefono,texto2);
+    let mensaje= new Mensaje ({
+      mensajeEmpleado: texto,
+      telefono: empleado.telefono
+    
+    })
+    this.mensajeRepository.create(mensaje);
 
-      this.autenticacion.EnviarMensajePass(clave,empleado.nombre,empleado.Email);
-
-         this.notificaciones.EnviarNotificacionesPorSMS();
-
-      return p;
+    return p;
   }
 
   @get('/empleados/count')
   @response(200, {
     description: 'Empleado model count',
-    content: {'application/json': {schema: CountSchema}},
+    content: { 'application/json': { schema: CountSchema } },
   })
   async count(
     @param.where(Empleado) where?: Where<Empleado>,
@@ -87,7 +124,7 @@ export class EmpleadoController {
       'application/json': {
         schema: {
           type: 'array',
-          items: getModelSchemaRef(Empleado, {includeRelations: true}),
+          items: getModelSchemaRef(Empleado, { includeRelations: true }),
         },
       },
     },
@@ -101,13 +138,13 @@ export class EmpleadoController {
   @patch('/empleados')
   @response(200, {
     description: 'Empleado PATCH success count',
-    content: {'application/json': {schema: CountSchema}},
+    content: { 'application/json': { schema: CountSchema } },
   })
   async updateAll(
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(Empleado, {partial: true}),
+          schema: getModelSchemaRef(Empleado, { partial: true }),
         },
       },
     })
@@ -122,13 +159,13 @@ export class EmpleadoController {
     description: 'Empleado model instance',
     content: {
       'application/json': {
-        schema: getModelSchemaRef(Empleado, {includeRelations: true}),
+        schema: getModelSchemaRef(Empleado, { includeRelations: true }),
       },
     },
   })
   async findById(
     @param.path.string('id') id: string,
-    @param.filter(Empleado, {exclude: 'where'}) filter?: FilterExcludingWhere<Empleado>
+    @param.filter(Empleado, { exclude: 'where' }) filter?: FilterExcludingWhere<Empleado>
   ): Promise<Empleado> {
     return this.empleadoRepository.findById(id, filter);
   }
@@ -142,7 +179,7 @@ export class EmpleadoController {
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(Empleado, {partial: true}),
+          schema: getModelSchemaRef(Empleado, { partial: true }),
         },
       },
     })
