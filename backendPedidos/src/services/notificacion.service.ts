@@ -24,9 +24,7 @@ export class NotificacionService {
         to: '+57'+celular , // Text this number
         from: '', // From a valid Twilio number
 
-/*conexion Rocio
-        to: '+573222360608', // Text this number
-        from: '+18507357483', // From a valid Twilio number */
+
       })
       .then((message:any) => console.log(message.sid));
 
