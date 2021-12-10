@@ -37,6 +37,7 @@ export class EmpleadoController {
     @service(AutenticacionService)
     public autenticacion: AutenticacionService
   ) { }
+  
   @post('/identificarEmpleado',{
     responses:{
       '200':{

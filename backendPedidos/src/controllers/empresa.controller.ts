@@ -1,3 +1,4 @@
+import { authenticate } from '@loopback/authentication';
 import {
   Count,
   CountSchema,
@@ -31,6 +32,7 @@ export class EmpresaController {
     description: 'Empresa model instance',
     content: {'application/json': {schema: getModelSchemaRef(Empresa)}},
   })
+  @authenticate("admin")
   async create(
     @requestBody({
       content: {
